@@ -114,6 +114,8 @@ namespace Com.Aote.Controls
             string uuid = System.Guid.NewGuid().ToString();
             string str = Path.Replace("|", "%7c") + "?uuid=" + uuid;
             Uri uri = new Uri(str);
+            //替换^为<,保证后台正常执行查询
+            HQL = HQL.Replace("^", "<");
             WebClient client = new WebClient();
             client.UploadStringCompleted += new UploadStringCompletedEventHandler(client_UploadStringCompleted);
             client.UploadStringAsync(uri, HQL);

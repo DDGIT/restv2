@@ -1,0 +1,5 @@
+restV2 Excel中，对于引用sql为PagedList中的HQL时，小于号未替换
+对于ObjectList和PagedObjectList不存在该问题
+PagedList的中HQL是在传送后台时才替换，Excel中获取到的是未替换前HQL
+为了减小影响，在Excel中处理
+替换^号为 >
