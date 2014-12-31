@@ -453,7 +453,7 @@ public class DBService {
 		if(type.equals("sql"))
 		{
 			//sql，根据列取回对象集
-			JSONArray array = this.queryPage(object.getString("names"), 9999999, 0, hql);
+			JSONArray array = this.postSQLPage(object.getString("names"), 9999999, 0, hql);
 			for(int i=0; i<array.length(); i++)
 			{
 				array.getJSONObject(i).put("EntityType", entity2);
