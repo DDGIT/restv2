@@ -145,7 +145,7 @@ public class DBService {
 		for (Object obj : list) {
 			// 把单个map转换成JSON对象
 			Map<String, Object> map = (Map<String, Object>) obj;
-			JSONObject json = MapToJson(map);
+			JSONObject json =  (JSONObject) new JsonTransfer().MapToJson(map);
 			array.put(json);
 		}
 		log.debug(array.toString());
@@ -193,7 +193,7 @@ public class DBService {
 		}
 		// 把单个map转换成JSON对象
 		Map<String, Object> map = (Map<String, Object>) list.get(0);
-		result = MapToJson(map);
+		result =  (JSONObject) new JsonTransfer().MapToJson(map);
 		log.debug(result.toString());
 		return result;
 	}
@@ -212,7 +212,7 @@ public class DBService {
 		}
 		// 把单个map转换成JSON对象
 		Map<String, Object> map = (Map<String, Object>) list.get(0);
-		result = MapToJson(map);
+		result =  (JSONObject) new JsonTransfer().MapToJson(map);
 		long attrVal = Long.parseLong(map.get(attrname).toString());
 		map.put(attrname, attrVal + 1 + "");
 		this.hibernateTemplate.update(map);
@@ -259,6 +259,7 @@ public class DBService {
 		}
 	}
 
+	/**
 	// 把单个map转换成JSON对象
 	private JSONObject MapToJson(Map<String, Object> map) {
 		JSONObject json = new JSONObject();
@@ -308,6 +309,7 @@ public class DBService {
 		}
 		return array;
 	}
+	**/
 
 	@GET
 	@Path("{hql}/{sumNames}")
@@ -1094,7 +1096,7 @@ public class DBService {
 					Object obj = list.get(j);
 					// 把单个map转换成JSON对象
 					Map<String, Object> map = (Map<String, Object>) obj;
-					JSONObject json = MapToJson(map);
+					JSONObject json =  (JSONObject) new JsonTransfer().MapToJson(map);
 					rowNum++;
 					row = sheet.createRow((short) rowNum);
 					for (int z = 0; z < colsStr.length; z++) {
@@ -1188,7 +1190,7 @@ public class DBService {
 
 					// 把单个map转换成JSON对象
 					Map<String, Object> map = (Map<String, Object>) obj;
-					JSONObject json = MapToJson(map);
+					JSONObject json =  (JSONObject) new JsonTransfer().MapToJson(map);
 					// 添加单个发票元素
 					Element record = xsRecords.addElement("xsRecord");
 					Element head = record.addElement("xsHead");
