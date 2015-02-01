@@ -506,7 +506,13 @@ namespace Com.Aote.Utils
             return String.Format(format, obj);
             throw new Exception("无法进行格式化处理: " + obj.GetType());
         }
+        //格式化发票号
+        public static string FormatInvoce(object obj, string format)
+        {
+            return int.Parse(obj.ToString()).ToString(format);
 
+            throw new Exception("无法进行格式化处理: " + obj.GetType());
+        }
         //把对象转换成日期
         public static DateTime ToDate(object obj)
         {
