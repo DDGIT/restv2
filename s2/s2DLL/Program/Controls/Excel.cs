@@ -43,6 +43,19 @@ namespace Com.Aote.Controls
             }
         }
         #endregion
+        #region CompletedError 导出失败事件
+        /// <summary>
+        /// 导出完成事件
+        /// </summary>
+        public event EventHandler CompletedError;
+        public void OnCompletedError()
+        {
+            if (CompletedError != null)
+            {
+                CompletedError(this, null);
+            }
+        }
+        #endregion
 
         #region IsBusy 是否正在工作
         public bool isBusy = false;
@@ -114,6 +127,12 @@ namespace Com.Aote.Controls
             string uuid = System.Guid.NewGuid().ToString();
             string str = Path.Replace("|", "%7c") + "?uuid=" + uuid;
             Uri uri = new Uri(str);
+            if(HQL ==null)
+            {
+                IsBusy = false;
+                OnCompletedError();
+                return;
+            }
             //替换^为<,保证后台正常执行查询
             HQL = HQL.Replace("^", "<");
             WebClient client = new WebClient();
