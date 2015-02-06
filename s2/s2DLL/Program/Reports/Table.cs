@@ -338,6 +338,8 @@ namespace Com.Aote.Reports
                         int width = obj["width"];
                         Column column = new Column() { Width = width };
                         this.columns.Add(column);
+                        //保存列初始化数据
+                        this.columns_init.Add(column);
                     }
                     //主体sql
                     JsonArray sqls = item["sqls"] as JsonArray;
@@ -681,7 +683,25 @@ namespace Com.Aote.Reports
                     this.bottomCellTemplate.Add(cell);
                 }
             }
-           
+            //如果表头有变化部分，表头模板根据列号排序
+            if (HasHead)
+            {
+                List<Cell> headCellTemplate_temp = new List<Cell>();
+                //表头模板根据列号排序
+                for (int i = 0; i < this.headCellTemplate.Count; i++)
+                {
+                    foreach (Cell cell in this.headCellTemplate)
+                    {
+                        if (cell.Column == i)
+                        {
+                            headCellTemplate_temp.Add(cell);
+                            break;
+                        }
+                    }
+                }
+                this.headCellTemplate.Clear();
+                this.headCellTemplate.AddRange(headCellTemplate_temp);
+            }
         }
 
        
@@ -729,21 +749,54 @@ namespace Com.Aote.Reports
             //绘制有表头变化部分的表头
             if (HasHead)
             {
+                //更新表头前,保存初始化列数据
+                List<Column> temp_columns = this.columns_init;
+                this.columns.Clear();
                 //获得表头变化模板包含几列
                 Dictionary<string, int> dic = getColumnNumber(headChangeCellTemplate);
                 //根据表头sql数据进行复制
-                for (int i = 0; i < TableHeadItems.Value.Count; i++)
+                foreach (Cell cell in headCellTemplate)
                 {
-                    //画表头
-                    foreach (Cell cell in headCellTemplate)
+                    
+                    if (cell.Column < dic["min"])
                     {
                         Cell copy = cell.copyCell();
-                        Program prog = new Program("data." + copy.Content, this, false);
+                        Program prog = new Program(copy.Content, this, false);
                         Delegate d = prog.Parse(prog.Exp);
                         copy.Delegate = d;
-                        //单元格为表头变化部分
-                        if (this.headChangeCellTemplate.Contains(cell))
+                        object value = copy.Delegate.DynamicInvoke();
+                        if (value == null) { value = copy.Content.Replace("$", ""); }
+                        copy.Content = value+"";
+                        copy.Row = cell.Row; this.cells.Add(copy);
+                        Column column = new Column() { Width = temp_columns[cell.Column].Width };
+                        this.columns.Add(column);
+                    }
+                    //在变化部分的右侧单元格，
+                    else if (cell.Column > dic["max"])
+                    {
+                        Cell copy = cell.copyCell();
+                        Program prog = new Program(copy.Content, this, false);
+                        Delegate d = prog.Parse(prog.Exp);
+                        copy.Delegate = d;
+                        object value = copy.Delegate.DynamicInvoke();
+                        if (value == null) { value = copy.Content.Replace("$", ""); }
+                        copy.Content = value + "";
+                        copy.Row = cell.Row;
+                        //根据表头变化部分模板复制单元格，横向复制
+                        copy.Column = cell.Column + (TableHeadItems.Value.Count - 1) * dic["count"];
+                        this.cells.Add(copy);
+                        Column column = new Column() { Width = temp_columns[cell.Column].Width };
+                        this.columns.Add(column);
+                    }
+                    else
+                    {
+
+                        for (int i = 0; i < TableHeadItems.Value.Count; i++)
                         {
+                            Cell copy = cell.copyCell();
+                            Program prog = new Program("data." + copy.Content, this, false);
+                            Delegate d = prog.Parse(prog.Exp);
+                            copy.Delegate = d;
                             object value = copy.Delegate.DynamicInvoke(new object[] { TableHeadItems.Value[i] });
                             if (value == null) { value = copy.Content.Replace("$", ""); }
                             copy.Content = value + "";
@@ -751,28 +804,10 @@ namespace Com.Aote.Reports
                             //根据表头变化部分模板复制单元格，横向复制
                             copy.Column = cell.Column + i * dic["count"];
                             this.cells.Add(copy);
+                            //复制列
+                            Column column = new Column() { Width = temp_columns[cell.Column].Width };
+                            this.columns.Add(column);
                         }
-                        //在变化部分左侧的，直接设置单元格，执行表达式
-                        else if (cell.Column < dic["min"]) 
-                        {
-                            copy.Content = copy.Content.Replace("$", "");
-                            copy.Row = cell.Row; this.cells.Add(copy); 
-                        }
-                        //在变化部分的右侧单元格，
-                        else if (cell.Column > dic["max"])
-                        {
-                            copy.Content = copy.Content.Replace("$", "");
-                            copy.Row = cell.Row;
-                            //根据表头变化部分模板复制单元格，横向复制
-                            copy.Column = cell.Column + (TableHeadItems.Value.Count-1) * dic["count"];
-                            this.cells.Add(copy);
-                        }
-                    }
-                    //添加列,根据表头变化部分模板横向复制
-                    for (int j = 0; j < i * dic["count"]; j++)
-                    {
-                        Column column = new Column() { Width = columns[0].Width };
-                        this.columns.Add(column);
                     }
                 }
             }
@@ -799,16 +834,65 @@ namespace Com.Aote.Reports
         private void UpdateBottom()
         {
             if (TableBodyItems[0].Value.Count == 0) return;
-            foreach (Cell cell in bottomCellTemplate)
+            //绘制有表头变化的情况
+            if (HasHead)
             {
-                Cell copy = cell.copyCell();
-                Program prog = new Program(copy.Content, this, false);
-                Delegate d = prog.Parse(prog.Exp);
-                copy.Delegate = d;
-                object value = copy.Delegate.DynamicInvoke();
-                copy.Content = value + "";
-                copy.Row = this.rows.Count - this.headRowTemplate.Count + copy.Row - 1;
-                this.cells.Add(copy);
+                //获得表头变化模板包含几列
+                Dictionary<string, int> dic = getColumnNumber(headChangeCellTemplate);
+                //根据表头sql数据进行复制
+                for (int i = 0; i < TableHeadItems.Value.Count; i++)
+                {
+                    //设置档案表头使用的对象，供表达式获取
+                    CurrentHead = TableHeadItems.Value[i];
+                    foreach (Cell cell in bottomCellTemplate)
+                    {
+                        Cell copy = cell.copyCell();
+                        Program prog = new Program(copy.Content, this, false);
+                        Delegate d = prog.Parse(prog.Exp);
+                        copy.Delegate = d;
+                        copy.Row = this.rows.Count - this.headRowTemplate.Count + copy.Row - 1;
+                        //单元格列号在表头变化部分内
+                        if (cell.Column >= dic["min"] && cell.Column <= dic["max"])
+                        {
+                            object value = copy.Delegate.DynamicInvoke();
+                            if (value == null) { value = copy.Content.Replace("$", ""); }
+                            copy.Content = value + ""; 
+                            //根据表头变化部分模板复制单元格，横向复制
+                            copy.Column = cell.Column + i * dic["count"];
+                            this.cells.Add(copy);
+                        }
+                        //在变化部分左侧的，直接设置单元格，执行表达式
+                        else if (cell.Column < dic["min"])
+                        {
+                            object value = copy.Delegate.DynamicInvoke();
+                            copy.Content = value+"";  this.cells.Add(copy);
+                        }
+                        //在变化部分的右侧单元格，
+                        else if (cell.Column > dic["max"])
+                        {
+                            object value = copy.Delegate.DynamicInvoke();
+                            copy.Content = value + ""; 
+                            //根据表头变化部分模板复制单元格，横向复制
+                            copy.Column = cell.Column + (TableHeadItems.Value.Count - 1) * dic["count"];
+                            this.cells.Add(copy);
+                        }
+                    }
+                }
+            }
+            //普通绘制
+            else
+            {
+                foreach (Cell cell in bottomCellTemplate)
+                {
+                    Cell copy = cell.copyCell();
+                    Program prog = new Program(copy.Content, this, false);
+                    Delegate d = prog.Parse(prog.Exp);
+                    copy.Delegate = d;
+                    object value = copy.Delegate.DynamicInvoke();
+                    copy.Content = value + "";
+                    copy.Row = this.rows.Count - this.headRowTemplate.Count + copy.Row - 1;
+                    this.cells.Add(copy);
+                }
             }
             //复制表行
             this.rows.AddRange(bottomRowTemplate);
@@ -845,17 +929,23 @@ namespace Com.Aote.Reports
                             object value = copy.Delegate.DynamicInvoke();
                             copy.Content = value + "";
                             copy.Row = cell.Row + j;
-                            if (copy.Column > dic["max"]) { copy.Column = copy.Column + (TableHeadItems.Value.Count - 1) * dic["count"]; }
+                            //单元格在变化部分右侧
+                            if (copy.Column > dic["max"]) 
+                            { 
+                                copy.Column = copy.Column + (TableHeadItems.Value.Count - 1) * dic["count"]; 
+                            }
                             else{ copy.Column = cell.Column + i * dic["count"];}
                             this.cells.Add(copy);
                         }
-                        foreach (var item in TableBodyItems[0].Value)
-                        {
-                            //根据模板加一行
-                            Row row = new Row() { Height = bodyCellTemplate[0].Height };
-                            this.rows.Add(row);
-                        }
+                        
                     }
+                }
+                //根据左侧数据添加行
+                foreach (var item in TableLeftItems.Value)
+                {
+                    //根据模板加一行
+                    Row row = new Row() { Height = bodyCellTemplate[0].Height };
+                    this.rows.Add(row);
                 }
             }
             else if (HasLeft)
@@ -977,6 +1067,10 @@ namespace Com.Aote.Reports
 
         //行信息
         List<Column> columns = new List<Column>();
+
+
+        //保存初始化行信息
+        List<Column> columns_init = new List<Column>();
 
         public override void OnApplyTemplate()
         {
@@ -1247,6 +1341,7 @@ namespace Com.Aote.Reports
                 Canvas.SetTop(text, (double)row.StartY);
                 text.Width = cell.Width;
                 text.Height = cell.Height;
+                text.TextWrapping = TextWrapping.Wrap;
                 this.cellLayout.Children.Add(text);
             }
         }
