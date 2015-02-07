@@ -39,6 +39,11 @@ namespace Com.Aote.ObjectTools
             return Now.AddMonths(-months);
         }
 
+        public DateTime MonthsAfterToday(int months)
+        {
+            return Now.AddMonths(months);
+        }
+
         //当天，当天=当前时间
         public DateTime Today
         {
