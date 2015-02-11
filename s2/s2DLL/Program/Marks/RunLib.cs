@@ -509,6 +509,10 @@ namespace Com.Aote.Utils
         //格式化发票号
         public static string FormatInvoce(object obj, string format)
         {
+            if (obj == null || obj.Equals(""))
+            {
+                throw new NullReferenceException();
+            }
             return int.Parse(obj.ToString()).ToString(format);
 
             throw new Exception("无法进行格式化处理: " + obj.GetType());
