@@ -54,6 +54,12 @@ namespace Com.Aote.ObjectTools
                 {
                     //更新数据
                     JsonArray items = JsonValue.Load(a.Result) as JsonArray;
+                    //提示后台返回信息
+                    if(items.Count>0 && items[0].ContainsKey("error"))
+                    {
+                        MessageBox.Show(items[0]["error"]);
+                        return;
+                    }
                     FromJson(items);
                     State = State.Loaded;
                 }

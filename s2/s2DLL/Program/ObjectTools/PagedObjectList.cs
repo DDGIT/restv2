@@ -121,7 +121,13 @@ namespace Com.Aote.ObjectTools
                 if (a.Error == null)
                 {
                     //更新数据
-                    JsonObject item = JsonValue.Load(a.Result) as JsonObject;                   
+                    JsonObject item = JsonValue.Load(a.Result) as JsonObject;
+                    //提示后台返回信息
+                    if (item.Keys.Contains("error"))
+                    {
+                        MessageBox.Show(item["error"]);
+                        return;
+                    }
                     FromJson(item);
                     //如果没有数据，必须通知完成，因为不会再有页面变化通知，这时，认为发生了错误，错误状态为没有数据
                     if(Count == 0)
@@ -167,6 +173,12 @@ namespace Com.Aote.ObjectTools
                     this.Clear();
                     //更新数据
                     JsonArray items = JsonValue.Load(a.Result) as JsonArray;
+                    //提示后台返回信息
+                    if (items.Count > 0 && items[0].ContainsKey("error"))
+                    {
+                        MessageBox.Show(items[0]["error"]);
+                        return;
+                    }
                     this.FromJson(items);
                     State = State.Loaded;
                 }

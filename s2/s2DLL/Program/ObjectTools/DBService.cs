@@ -52,6 +52,12 @@ namespace Com.Aote.ObjectTools
                 {
                     //返回数据重新赋值给对象
                     JsonObject resultJson =  (JsonObject)JsonValue.Parse(e.Result);
+                    //提示后台返回信息
+                    if(resultJson.Keys.Contains("error"))
+                    {
+                        MessageBox.Show(resultJson["error"]);
+                        return;
+                    }
                     if (resultJson.ContainsKey(obj.Name))
                     {
                         (obj as IFromJson).FromJson((JsonObject)resultJson[obj.Name]);
