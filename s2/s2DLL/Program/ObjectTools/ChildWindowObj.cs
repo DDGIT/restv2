@@ -13,21 +13,21 @@ using Com.Aote.Utils;
 using Com.Aote.Logs;
 using System.Windows.Navigation;
 using Com.Aote.Controls;
+using System.ComponentModel;
 
 namespace Com.Aote.ObjectTools
 {
     /**
      * 子窗口对象，作为中转对象，用于打开子串口，获取子窗口结果
      */
-    public class ChildWindowObj : DependencyObject, IInitable, IName
+    public class ChildWindowObj : CustomTypeHelper, IAsyncObject
     {
 
         private static Log Log = Log.GetInstance("Com.Aote.Controls.ChildWindowObj");
 
          //提供环境信息的对象，可以是应用程序或者界面元素之一
         private object UI;
-
-        public string Name { get; set; }
+         
 
         //子窗口页面名称
         public string CWName { set; get; }
@@ -72,6 +72,7 @@ namespace Com.Aote.ObjectTools
                                 cwo.Result = cw.ReturnValue;
                                 cwo.OnCompleted();
                             }
+                            cwo.OnCompleted(new AsyncCompletedEventArgs(null, false, null));
                         };
                 }), 1);
                 cwo.IsOpen = false;
@@ -85,6 +86,14 @@ namespace Com.Aote.ObjectTools
             set { SetValue(IsOpenProperty, value); }
         }
         #endregion
+
+        /// <summary>
+        /// 打开子窗口方法
+        /// </summary>
+        public void Open()
+        {
+            IsOpen = true;
+        }
 
 
         #region Result属性,子窗口返回结果
@@ -145,12 +154,12 @@ namespace Com.Aote.ObjectTools
         /// <summary>
         /// 完成事件带回返回值
         /// </summary>
-        public event EventHandler Completed;
+        public event EventHandler Completed1;
         public void OnCompleted()
         {
-            if (Completed != null)
+            if (Completed1 != null)
             {
-                Completed(this, null);
+                Completed1(this, null);
             }
         }
         #endregion
@@ -159,6 +168,64 @@ namespace Com.Aote.ObjectTools
 
 
 
-         
+
+
+        public bool isBusy = false;
+        public bool IsBusy
+        {
+            get { return isBusy; }
+            set
+            {
+                isBusy = value;
+                OnPropertyChanged("IsBusy");
+            }
+        }
+
+
+        #region Error 错误
+        public string error = "";
+        public string Error
+        {
+            get { return error; }
+            set
+            {
+                error = value;
+                OnPropertyChanged("Error");
+            }
+        }
+        #endregion
+
+        public event System.ComponentModel.AsyncCompletedEventHandler Completed;
+
+        public void OnCompleted(System.ComponentModel.AsyncCompletedEventArgs e)
+        {
+            if (Completed != null)
+            {
+                Completed(this, e);
+            }
+        }
+
+        public string Name
+        {
+            get;
+            set;
+        }
+
+
+        #region State 状态
+        public static readonly DependencyProperty StateProperty =
+            DependencyProperty.Register("State", typeof(State), typeof(ChildWindowObj), null);
+
+        public State State
+        {
+            get { return (State)GetValue(StateProperty); }
+            set
+            {
+                SetValue(StateProperty, value);
+            }
+        }
+        #endregion
+
+ 
     }
 }
